@@ -27,28 +27,30 @@ app.post('/register', async (req, res) => {
     })
 })
 
-app.post('/login', async (req, res) => {
+app.post('/login', (req, res) => {
     try {
         const { login, senha } = req.body
-        const searchUser = db.query('SELECT * FROM credencial WHERE login = ?', login)
-        if (!searchUser) {
-            return res.json({ error: 'usuario nao encontardo' })
-        }
-        const verifPass = crypt.compare(senha, searchUser.senha)
-        if(!verifPass) {
-            return res.status(400).json({ error: 'senha inválida' })
-        }
-        const token = jwt.sign(
-            {
-                id: user.id,
-                login: user.login
-            },
-            SECRET,
-            {
-                expiresIn: "1h"
+        db.query('SELECT * FROM credencial WHERE login = ?', [login], async (err, results) => {
+            if (results.length === 0) {
+                return res.status(400).json({ error: "user nao cadastrado" })
             }
-        )
-        res.json({ token: token })
+            const user = results[0]
+            const verif = await crypt.compare(senha, user.senha)
+            if(!verif) {
+                return res.status(400).json({ error: 'senha inválida' })
+            }
+            const token = jwt.sign(
+                {
+                    id: user.id,
+                    login: user.login
+                },
+                SECRET,
+                {
+                    expiresIn: "1h"
+                }
+            )
+            res.json({ token })
+        })
     } catch (err) {
         res.json({ error: err })
     }
