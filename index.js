@@ -38,28 +38,21 @@ app.post('/login', async (req, res) => {
         if(!verifPass) {
             return res.status(400).json({ error: 'senha inválida' })
         }
-        res.json({
-            msg: 'usuario logado com sucesso',
-            user: {
-                id: searchUser.id,
-                login: searchUser.login
+        const token = jwt.sign(
+            {
+                id: user.id,
+                login: user.login
+            },
+            SECRET,
+            {
+                expiresIn: "1h"
             }
-        })
+        )
+        res.json({ token: token })
     } catch (err) {
         res.json({ error: err })
     }
 })
-
-const token = jwt.sign(
-    {
-        id: user.id,
-        login: user.login
-    },
-    SECRET,
-    {
-        expiresIn: "1h"
-    }
-)
 
 app.get('/admin', authMiddleware, (req, res) => {
     res.json({
